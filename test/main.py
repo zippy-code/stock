@@ -55,12 +55,19 @@ while idx < news_num:
         idx += 1
 
     cur_page += 1
-
+    next_page_url = ""
+    check_exist = True
     pages = html.find('div', {'class' : 'sc_page_inner'})
-    next_page_url = [p for p in pages.find_all('a') if p.text == str(cur_page)][0].get('href')
-    
-    req = requests.get('https://search.naver.com/search.naver' + next_page_url)
-    html = BeautifulSoup(req.text, 'html.parser')
+    for p in pages.find_all('a'):
+        if p.text == str(cur_page):
+            next_page_url = [p][0].get('href')
+        else:
+            continue
+    if next_page_url != '':
+        req = requests.get('https://search.naver.com/search.naver' + next_page_url)
+        html = BeautifulSoup(req.text, 'html.parser')
+    else:
+        break
 
 
 print('크롤링 완료')
