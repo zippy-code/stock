@@ -4,7 +4,9 @@ from bs4 import BeautifulSoup
 import math
 import pandas
 import re
+from konlpy.tag import Hannanum
 
+Han = Hannanum()  
 
 query = input('검색 키워드를 입력하세요 : ') 
 news_num = int(input('필요한 뉴스기사의 수를 입력하세요(숫자만 입력) : '))
@@ -45,18 +47,20 @@ while idx < news_num:
     li_list = table.find_all('li', {'id': re.compile('sp_nws.*')})
     area_list = [li.find('div', {'class' : 'news_area'}) for li in li_list]
     a_list = [area.find('a', {'class' : 'news_tit'}) for area in area_list]
+    txt_list = [txt.find('a', {'class' : 'api_txt_lines dsc_txt_wrap'}) for txt in area_list]
     
     idx_in = 0
     for n in a_list[:min(len(a_list), news_num-idx)]:
-        news_dict[idx] = {'title' : n.get('title'),
-                          'desc' : area_list[idx_in].select_one('div.news_wrap.api_ani_send > div.news_area > div.news_dsc > div.dsc_wrap > a').text,
-                          'url' : n.get('href'), }
+        news_dict[idx] = {'title'   : n.get('title'),
+                          'desc'    : txt_list[idx_in].text, #beautifulsoup4 4.6.0을 사용할 때는 find 함수 호출 후 .text 로 문자열만 뽑아내야 한다.
+                          'token'   : Han.nouns(txt_list[idx_in].text),
+                          #'desc' : area_list[idx_in].select_one('div.news_wrap.api_ani_send > div.news_area > div.news_dsc > div.dsc_wrap > a').text, #konlpy는 beautifulsoup4 4.10.0 지원하지 않음. 
+                          'url'     : n.get('href'), }
         idx_in += 1
         idx += 1
 
     cur_page += 1
     next_page_url = ""
-    check_exist = True
     pages = html.find('div', {'class' : 'sc_page_inner'})
     for p in pages.find_all('a'):
         if p.text == str(cur_page):
